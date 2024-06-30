@@ -48,6 +48,8 @@ func (server *Server) getAccount(ctx *gin.Context) {
 	}
 
 	account, err := server.store.GetAccount(ctx, req.ID)
+	fmt.Printf("account: %v\n", account)
+	fmt.Printf("err: %v\n", err)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ctx.JSON(http.StatusNotFound, errorHandler(err))
