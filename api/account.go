@@ -7,11 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	db "github.com/leedrum/simplebank/db/sqlc"
+	"github.com/leedrum/simplebank/util"
 	"github.com/lib/pq"
 )
 
 type CreateAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -22,8 +22,9 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayload).(*util.Token)
 	arg := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Username,
 		Currency: req.Currency,
 		Balance:  0,
 	}
@@ -69,6 +70,12 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayload).(*util.Token)
+	if account.Owner != authPayload.Username {
+		ctx.JSON(http.StatusUnauthorized, errorHandler(err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, account)
 }
 
@@ -83,8 +90,10 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, errorHandler(err))
 		return
 	}
-	fmt.Println(req)
+
+	authPayload := ctx.MustGet(authorizationPayload).(*util.Token)
 	arg := db.ListAccountsParams{
+		Owner:  authPayload.Username,
 		Limit:  req.PageSize,
 		Offset: (req.PageID - 1) * req.PageSize,
 	}
