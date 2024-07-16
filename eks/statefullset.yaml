@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: simple-bank-api-statefullset
+spec:
+  selector:
+    matchLabels:
+      user: root
+  serviceName: workspace-svc
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        user: root
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: workspace
+        image: ghcr.io/s1ntaxe770r/image:latest
+        ports:
+        - containerPort: 22
+          name: ssh
+          protocol: TCP
