@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	db "github.com/leedrum/simplebank/db/sqlc"
-	"github.com/leedrum/simplebank/util"
+	"github.com/leedrum/simplebank/token"
 )
 
 type CreateTransferRequest struct {
@@ -30,7 +30,7 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 
-	authPayload := ctx.MustGet(authorizationPayload).(*util.Token)
+	authPayload := ctx.MustGet(authorizationPayload).(*token.Payload)
 	if fromAccount.Owner != authPayload.Username {
 		err := fmt.Errorf("account [%d] does not belong to user [%s]", req.FromAccountID, authPayload.Username)
 		ctx.JSON(http.StatusUnauthorized, errorHandler(err))

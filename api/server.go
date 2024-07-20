@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	db "github.com/leedrum/simplebank/db/sqlc"
+	"github.com/leedrum/simplebank/token"
 	"github.com/leedrum/simplebank/util"
 )
 
@@ -14,11 +15,11 @@ type Server struct {
 	config     util.Config
 	store      db.Store
 	router     *gin.Engine
-	tokenMaker *util.TokenMaker
+	tokenMaker token.Maker
 }
 
 func NewServer(config util.Config, store db.Store) (*Server, error) {
-	tokenMaker, err := util.NewTokenMaker(config.TokenSymmetricKey)
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create token maker: %w", err)
 	}
@@ -41,6 +42,7 @@ func (server *Server) setupRouter() {
 	router := gin.Default()
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
+	router.POST("/users/renew", server.renewAccessToken)
 
 	authRoute := router.Group("/").Use(authMiddleware(server.tokenMaker))
 

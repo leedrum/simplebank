@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	db "github.com/leedrum/simplebank/db/sqlc"
-	"github.com/leedrum/simplebank/util"
+	"github.com/leedrum/simplebank/token"
 	"github.com/lib/pq"
 )
 
@@ -22,7 +22,7 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
-	authPayload := ctx.MustGet(authorizationPayload).(*util.Token)
+	authPayload := ctx.MustGet(authorizationPayload).(*token.Payload)
 	arg := db.CreateAccountParams{
 		Owner:    authPayload.Username,
 		Currency: req.Currency,
@@ -70,7 +70,7 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
-	authPayload := ctx.MustGet(authorizationPayload).(*util.Token)
+	authPayload := ctx.MustGet(authorizationPayload).(*token.Payload)
 	if account.Owner != authPayload.Username {
 		ctx.JSON(http.StatusUnauthorized, errorHandler(err))
 		return
@@ -91,7 +91,7 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 		return
 	}
 
-	authPayload := ctx.MustGet(authorizationPayload).(*util.Token)
+	authPayload := ctx.MustGet(authorizationPayload).(*token.Payload)
 	arg := db.ListAccountsParams{
 		Owner:  authPayload.Username,
 		Limit:  req.PageSize,
