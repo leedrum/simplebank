@@ -22,11 +22,12 @@ func TestJWTMaker(t *testing.T) {
 	duration := time.Minute
 	issuedAt := time.Now()
 
-	token, err := maker.CreateToken(username, duration)
+	token, payload, err := maker.CreateToken(username, duration)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
+	require.NotEmpty(t, payload)
 
-	payload, err := maker.VerifyToken(token)
+	payload, err = maker.VerifyToken(token)
 	require.NoError(t, err)
 	require.NotEmpty(t, payload)
 
@@ -40,11 +41,12 @@ func TestExpiredToken(t *testing.T) {
 	maker, err := NewJWTMaker(util.RandomString(32))
 	require.NoError(t, err)
 
-	token, err := maker.CreateToken(util.RandomOwner(), -time.Minute)
+	token, payload, err := maker.CreateToken(util.RandomOwner(), -time.Minute)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
+	require.NotEmpty(t, payload)
 
-	payload, err := maker.VerifyToken(token)
+	payload, err = maker.VerifyToken(token)
 	require.Error(t, err)
 	require.ErrorContains(t, err, jwt.ErrTokenExpired.Error())
 	require.Nil(t, payload)
@@ -64,9 +66,10 @@ func TestInvalidAglo(t *testing.T) {
 	maker, err := NewJWTMaker(util.RandomString(32))
 	require.NoError(t, err)
 
-	token, err := maker.CreateToken(util.RandomOwner(), time.Minute)
+	token, payload, err := maker.CreateToken(util.RandomOwner(), time.Minute)
 	require.NoError(t, err)
 	require.NotEmpty(t, token)
+	require.NotEmpty(t, payload)
 
 	// Change the algorithm
 	_, err = jwt.ParseWithClaims(token, &Payload{}, func(token *jwt.Token) (interface{}, error) {

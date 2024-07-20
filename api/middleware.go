@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leedrum/simplebank/util"
+	"github.com/leedrum/simplebank/token"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	authorizationPayload    = "authorization_payload"
 )
 
-func authMiddleware(tokenMaker *util.TokenMaker) gin.HandlerFunc {
+func authMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get the value of the Authorization header
 		authorization := c.GetHeader(authorizationHeaderKey)
