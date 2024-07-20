@@ -5,6 +5,7 @@ const (
 	USD = "USD"
 	EUR = "EUR"
 	CAD = "CAD"
+	VND = "VND"
 )
 
 // IsSupportedCurrency returns true if the currency is supported
