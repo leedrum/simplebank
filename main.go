@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net"
+	"net/http"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/leedrum/simplebank/api"
 	db "github.com/leedrum/simplebank/db/sqlc"
 	"github.com/leedrum/simplebank/gapi"
@@ -13,6 +16,7 @@ import (
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func main() {
@@ -27,7 +31,7 @@ func main() {
 	}
 
 	store := db.NewStore(conn)
-	// runGinServer(config, store)
+	go runGatewayServer(config, store)
 	runRPCServer(config, store)
 }
 
@@ -50,6 +54,46 @@ func runRPCServer(config util.Config, store db.Store) {
 	err = grpcServer.Serve(listen)
 	if err != nil {
 		log.Fatal("cannot start gRPC server: ", err)
+	}
+}
+
+func runGatewayServer(config util.Config, store db.Store) {
+	server, err := gapi.NewServer(config, store)
+	if err != nil {
+		log.Fatal("cannot create server:", err)
+	}
+
+	jsonOptions := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	})
+
+	gprcMux := runtime.NewServeMux(jsonOptions)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err = pb.RegisterSimpleBankHandlerServer(ctx, gprcMux, server)
+	if err != nil {
+		log.Fatal("cannot register gateway server: ", err)
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", gprcMux)
+
+	listen, err := net.Listen("tcp", config.HTTPServerAddress)
+	if err != nil {
+		log.Fatal("cannot start server: ", err)
+	}
+
+	log.Printf("start HTTP gateway server on %s", listen.Addr().String())
+	err = http.Serve(listen, gprcMux)
+	if err != nil {
+		log.Fatal("cannot start HTTP gateway server: ", err)
 	}
 }
 
