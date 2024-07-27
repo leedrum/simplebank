@@ -10,10 +10,12 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/leedrum/simplebank/api"
 	db "github.com/leedrum/simplebank/db/sqlc"
+	_ "github.com/leedrum/simplebank/doc/statik"
 	"github.com/leedrum/simplebank/gapi"
 	"github.com/leedrum/simplebank/pb"
 	"github.com/leedrum/simplebank/util"
 	_ "github.com/lib/pq"
+	"github.com/rakyll/statik/fs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -85,8 +87,13 @@ func runGatewayServer(config util.Config, store db.Store) {
 	mux := http.NewServeMux()
 	mux.Handle("/", gprcMux)
 
-	fs := http.FileServer(http.Dir("./doc/swagger"))
-	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
+	statikFS, err := fs.New()
+	if err != nil {
+		log.Fatal("cannot create statik fs")
+	}
+
+	swaggerHandler := http.StripPrefix("/swagger/", http.FileServer(statikFS))
+	mux.Handle("/swagger/", swaggerHandler)
 
 	listen, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
@@ -94,7 +101,7 @@ func runGatewayServer(config util.Config, store db.Store) {
 	}
 
 	log.Printf("start HTTP gateway server on %s", listen.Addr().String())
-	err = http.Serve(listen, gprcMux)
+	err = http.Serve(listen, mux)
 	if err != nil {
 		log.Fatal("cannot start HTTP gateway server: ", err)
 	}
