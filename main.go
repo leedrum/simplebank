@@ -7,6 +7,9 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/leedrum/simplebank/api"
 	db "github.com/leedrum/simplebank/db/sqlc"
@@ -32,9 +35,24 @@ func main() {
 		log.Fatal("cannot connect to db: ", err)
 	}
 
+	runDBMigration(config.MigrationURL, config.DBSource)
+
 	store := db.NewStore(conn)
 	go runGatewayServer(config, store)
 	runRPCServer(config, store)
+}
+
+func runDBMigration(migrationURL string, dbSource string) {
+	m, err := migrate.New(migrationURL, dbSource)
+	if err != nil {
+		log.Fatal("cannot create migration: ", err)
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatal("cannot apply migration: ", err)
+	}
+	log.Println("migration applied successfully")
 }
 
 func runRPCServer(config util.Config, store db.Store) {
