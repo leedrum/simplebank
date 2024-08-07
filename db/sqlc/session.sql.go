@@ -47,7 +47,6 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 		arg.IsBlocked,
 	)
 	var i Session
-
 	err := row.Scan(
 		&i.ID,
 		&i.Username,

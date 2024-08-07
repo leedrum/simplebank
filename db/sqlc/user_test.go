@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/leedrum/simplebank/util"
@@ -49,4 +50,24 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, user1.FullName, user2.FullName)
 	require.Equal(t, user1.Email, user2.Email)
 	require.Equal(t, user1.CreatedAt, user2.CreatedAt)
+}
+
+func TestUpdateUser(t *testing.T) {
+	randomUser := createRandomUser(t)
+	require.NotEmpty(t, randomUser)
+
+	newFullName := util.RandomOwner()
+	user, err := testQueries.UpdateUser(context.Background(), UpdateUserParams{
+		Username: randomUser.Username,
+		FullName: sql.NullString{
+			String: newFullName,
+			Valid:  true,
+		},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, user)
+	require.Equal(t, newFullName, user.FullName)
+	require.Equal(t, randomUser.Username, user.Username)
+	require.Equal(t, randomUser.HashedPassword, user.HashedPassword)
+	require.Equal(t, randomUser.Email, user.Email)
 }
