@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/hibiken/asynq"
+	db "github.com/leedrum/simplebank/db/sqlc"
+	"github.com/leedrum/simplebank/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -49,7 +51,7 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(
 		return err
 	}
 
-	_, err := processor.store.GetUser(ctx, payload.Username)
+	user, err := processor.store.GetUser(ctx, payload.Username)
 	if err != nil {
 		// if err == sql.ErrNoRows {
 		// 	return fmt.Errorf("user not found: %w", asynq.SkipRetry)
@@ -58,12 +60,35 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(
 		return fmt.Errorf("failed to get user: %w", err)
 	}
 
+	verifyEmail, err := processor.store.CreateVerifyEmail(ctx, db.CreateVerifyEmailParams{
+		Username:   user.Username,
+		Email:      user.Email,
+		SecretCode: util.RandomString(32),
+	})
+
+	subject := "Verify your email"
+	body := fmt.Sprintf(
+		"Hello, %s! Click this link to verify your email: http://localhost:8080/v1/verify_email?email_id=%v&code=%s",
+		verifyEmail.Username,
+		verifyEmail.ID,
+		verifyEmail.SecretCode,
+	)
+	to := []string{user.Email}
+	processor.mailer.SendEmail(
+		subject,
+		body,
+		to,
+		nil, nil, nil,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to create verify email: %w", err)
+	}
+
 	log.Info().
 		Str("type", task.Type()).
 		Bytes("payload", task.Payload()).
 		Msgf("processing task: id=%s type=%s", task.ResultWriter().TaskID(), TaskTypeSendVerifyEmail)
-
-	// Send email verification
 
 	return nil
 }

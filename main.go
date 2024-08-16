@@ -19,6 +19,7 @@ import (
 	db "github.com/leedrum/simplebank/db/sqlc"
 	_ "github.com/leedrum/simplebank/doc/statik"
 	"github.com/leedrum/simplebank/gapi"
+	"github.com/leedrum/simplebank/mail"
 	"github.com/leedrum/simplebank/pb"
 	"github.com/leedrum/simplebank/util"
 	"github.com/leedrum/simplebank/worker"
@@ -72,7 +73,12 @@ func runDBMigration(migrationURL string, dbSource string) {
 }
 
 func runTaskProcessor(redisOpts asynq.RedisClientOpt, store db.Store) {
-	processor := worker.NewRedisTaskProcessor(redisOpts, store)
+	mailSender := mail.NewGmailSender(
+		"leedrum",
+		"developer.levantung@gmail.com",
+		"app_password",
+	)
+	processor := worker.NewRedisTaskProcessor(redisOpts, store, mailSender)
 	err := processor.Start()
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot start task processor")
