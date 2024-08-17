@@ -28,7 +28,7 @@ sqlc:
 	sqlc generate
 
 test:
-	go test -v -cover ./...
+	go test -v -cover -short ./...
 
 server:
 	go run main.go
@@ -49,4 +49,7 @@ proto:
 evans:
 	evans --host localhost --port 9090 -r repl
 
-.PHONY: postgres createdb dropdb sqlc migrateup migratedown migrateup1 migratedown1 new_migration test server mock proto evans
+redis:
+	docker run --name redis --network bank-network -p 6379:6379 -d redis:7.4-alpine
+
+.PHONY: postgres createdb dropdb sqlc migrateup migratedown migrateup1 migratedown1 new_migration test server mock proto evans redis

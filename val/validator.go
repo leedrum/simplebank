@@ -70,3 +70,19 @@ func ValidateEmail(email string) error {
 
 	return nil
 }
+
+func ValidateEmaiID(email_id int64) error {
+	if email_id <= 0 {
+		return fmt.Errorf("invalid email id")
+	}
+
+	return nil
+}
+
+func ValidateSecretCode(secret_code string) error {
+	if len(secret_code) != 32 {
+		return fmt.Errorf("secret code is not valid")
+	}
+
+	return nil
+}
