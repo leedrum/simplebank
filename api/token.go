@@ -1,11 +1,12 @@
 package api
 
 import (
-	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	db "github.com/leedrum/simplebank/db/sqlc"
 )
 
 type renewAccessTokenRequest struct {
@@ -32,7 +33,7 @@ func (server *Server) renewAccessToken(ctx *gin.Context) {
 
 	session, err := server.store.GetSession(ctx, refreshPayload.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrorRecordNotFound) {
 			ctx.JSON(http.StatusUnauthorized, errorHandler(err))
 			return
 		}

@@ -53,7 +53,7 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(
 
 	user, err := processor.store.GetUser(ctx, payload.Username)
 	if err != nil {
-		// if err == sql.ErrNoRows {
+		// if errors.Is(err, db.ErrorRecordNotFound) {
 		// 	return fmt.Errorf("user not found: %w", asynq.SkipRetry)
 		// }
 
