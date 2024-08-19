@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/leedrum/simplebank/util"
-	_ "github.com/lib/pq"
 )
 
 var testStore Store
