@@ -1,7 +1,7 @@
 package api
 
 import (
-	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	db "github.com/leedrum/simplebank/db/sqlc"
 	"github.com/leedrum/simplebank/util"
-	"github.com/lib/pq"
 )
 
 type CreateUserRequest struct {
@@ -58,12 +57,9 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	user, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code {
-			case "unique_violation":
-				ctx.JSON(http.StatusForbidden, errorHandler(err))
-				return
-			}
+		if db.ErrorCode(err) == db.UniqueViolation {
+			ctx.JSON(http.StatusForbidden, errorHandler(err))
+			return
 		}
 
 		ctx.JSON(http.StatusInternalServerError, errorHandler(err))
@@ -97,7 +93,7 @@ func (server *Server) loginUser(ctx *gin.Context) {
 
 	user, err := server.store.GetUser(ctx, req.Username)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrorRecordNotFound) {
 			ctx.JSON(http.StatusUnauthorized, errorHandler(err))
 			return
 		}

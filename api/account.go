@@ -1,14 +1,13 @@
 package api
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	db "github.com/leedrum/simplebank/db/sqlc"
 	"github.com/leedrum/simplebank/token"
-	"github.com/lib/pq"
 )
 
 type CreateAccountRequest struct {
@@ -31,12 +30,9 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	account, err := server.store.CreateAccount(ctx, arg)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code {
-			case "foreign_key_violation", "unique_violation":
-				ctx.JSON(http.StatusForbidden, errorHandler(err))
-				return
-			}
+		if db.ErrorCode(err) == db.UniqueViolation || db.ErrorCode(err) == db.ForeignKeyViolation {
+			ctx.JSON(http.StatusForbidden, errorHandler(err))
+			return
 		}
 
 		ctx.JSON(http.StatusInternalServerError, errorHandler(err))
@@ -61,7 +57,7 @@ func (server *Server) getAccount(ctx *gin.Context) {
 	fmt.Printf("account: %v\n", account)
 	fmt.Printf("err: %v\n", err)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrorRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorHandler(err))
 			return
 		}
@@ -99,7 +95,7 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 	}
 	accounts, err := server.store.ListAccounts(ctx, arg)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrorRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorHandler(err))
 			return
 		}
@@ -135,7 +131,7 @@ func (server *Server) updateAccount(ctx *gin.Context) {
 
 	_, err := server.store.GetAccount(ctx, arg.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrorRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorHandler(err))
 			return
 		}
@@ -166,7 +162,7 @@ func (server *Server) deleteAccount(ctx *gin.Context) {
 
 	_, err := server.store.GetAccount(ctx, req.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, db.ErrorRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorHandler(err))
 			return
 		}
