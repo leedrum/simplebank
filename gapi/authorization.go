@@ -13,7 +13,7 @@ const (
 	authorizationHeader = "authorization"
 )
 
-func (server *Server) authorizeUser(ctx context.Context) (*token.Payload, error) {
+func (server *Server) authorizeUser(ctx context.Context, accessibleRoles []string) (*token.Payload, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("metadata is not provided")
@@ -40,5 +40,19 @@ func (server *Server) authorizeUser(ctx context.Context) (*token.Payload, error)
 		return nil, fmt.Errorf("token is invalid: %w", err)
 	}
 
+	if !hasPermission(payload.Role, accessibleRoles) {
+		return nil, fmt.Errorf("forbidden")
+	}
+
 	return payload, nil
+}
+
+func hasPermission(userRole string, accessibleRoles []string) bool {
+	for _, role := range accessibleRoles {
+		if userRole == role {
+			return true
+		}
+	}
+
+	return false
 }
