@@ -60,7 +60,7 @@ jobs:
       #     docker push -a $REGISTRY/$REPOSITORY
 
       # - name: Update kube config
-      #   run: aws eks update-kubeconfig --name simple-bank --region ${{ env.AWS_REGION }}
+      #   run: aws eks update-kubeconfig --name simple-bank-eks --region ${{ env.AWS_REGION }}
 
       # - name: Deploy to EKS
 
@@ -69,4 +69,6 @@ jobs:
         #   kubectl apply -f eks/deployment.yaml
         #   kubectl apply -f eks/service.yaml
         #   kubectl apply -f eks/issuer.yaml
-        #   kubectl apply -f eks/ingress.yaml
+        #   kubectl apply -f eks/ingress-nginx.yaml
+        #   kubectl apply -f eks/ingress-http.yaml
+        #   kubectl apply -f eks/ingress-grpc.yaml
